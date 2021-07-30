@@ -79,12 +79,12 @@
         <Compile Include="Settings.cs" />
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Include="Resources\left_3.png" />
-      <EmbeddedResource Include="Resources\left_1.png" />
-      <EmbeddedResource Include="Resources\left_2.png" />
-      <EmbeddedResource Include="Resources\right_3.png" />
-      <EmbeddedResource Include="Resources\right_1.png" />
-      <EmbeddedResource Include="Resources\right_2.png" />
+      <EmbeddedResource Include="Resources\left_LightShade.png" />
+      <EmbeddedResource Include="Resources\left_DarkShade.png" />
+      <EmbeddedResource Include="Resources\left_MediumShade.png" />
+      <EmbeddedResource Include="Resources\right_LightShade.png" />
+      <EmbeddedResource Include="Resources\right_DarkShade.png" />
+      <EmbeddedResource Include="Resources\right_MediumShade.png" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">

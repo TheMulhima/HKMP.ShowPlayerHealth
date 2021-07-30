@@ -12,15 +12,18 @@ namespace PlayerHealth
 {
     public class PlayerHealth:Mod
     {
-        public override string GetVersion() => "v1.0.3";
+        public override string GetVersion() => "v1.0.4";
 
         internal static PlayerHealth Instance;
 
         private static readonly string MyPath = Application.persistentDataPath + "/HKMP Player Health/";
         public static readonly string MyFile = MyPath + "config.json";
 
-        internal static Dictionary<string, Texture2D> images = new Dictionary<string, Texture2D>();
+        internal static Dictionary<string, Texture2D> images = new ();
+        public static (int,int) TextureDimentions; //a tuple to store dimentions of the textures so that it can be accessed in a non cursed way
 
+        private const float ResizeAmount = 2f / 3f;
+        
         public GlobalModSettings settings = new GlobalModSettings();
         public override ModSettings GlobalSettings 
         {
@@ -57,7 +60,7 @@ namespace PlayerHealth
                     tex.LoadImage(buffer.ToArray());
                         
                     //make it 2/3rds the original size
-                    tex = Resize(tex, 81,132);
+                    tex = Resize(tex);
                     string[] split = res.Split('.');
                     string internalName = split[split.Length - 2];
                     
@@ -67,13 +70,16 @@ namespace PlayerHealth
                 }
                 catch (Exception e)
                 {
-                    Log("Failed to load image: " + res + "\n" + e.ToString());
+                    Log("Failed to load image: " + res + "\n" + e);
                 }
             }
             
-            //the main update function thats going to be used for this mod to work
+            TextureDimentions = (images.First().Value.width,images.First().Value.height);
+            
+            //the main monobehaviour thats going to be used for this mod to work
             GameManager.instance.gameObject.AddComponent<HealthBars>();
 
+            //to make sure the mod an still be used if a save if opened and closed
             ModHooks.Instance.SavegameLoadHook += _ => AddMyComponent();
             ModHooks.Instance.NewGameHook += AddMyComponent;
             On.QuitToMenu.Start += DeleteText;
@@ -92,8 +98,10 @@ namespace PlayerHealth
             if (MyComponent == null) GameManager.instance.gameObject.AddComponent<HealthBars>();
         }
 
-        private static Texture2D Resize(Texture2D texture2D,int targetX, int targetY)
+        private static Texture2D Resize(Texture2D texture2D)
         {
+            var targetX =(int) (texture2D.width * ResizeAmount);
+            var targetY = (int)(texture2D.height * ResizeAmount);
             RenderTexture rt = new RenderTexture(targetX, targetY, 24);
             RenderTexture.active = rt;
             Graphics.Blit(texture2D,rt);

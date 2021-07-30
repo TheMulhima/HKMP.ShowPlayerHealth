@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Hkmp.Api;
@@ -11,51 +12,25 @@ namespace PlayerHealth
 {
     public class HealthBars : MonoBehaviour
     {
-        private static int DarkShade = 3, MediumShade = 6;
-        private static float HorizontalSpacing = 3f;
-        private static float VerticalSpacing = 20f;
+        private const int DarkShade = 3, MediumShade = 3;
+        private const float HorizontalSpacing = 2f, VerticalSpacing = 20f;
+        private const float width = 300f , height = 100f;
+        private const int FontSize = 36;
         
-        public static string Player1, Player2; //The 2 players that are gonna be displayed
+        private static string Player1, Player2; //The 2 players that are gonna be displayed
 
-        private static CanvasText Player1Text;
-        private static CanvasText Player2Text;
+        private static CanvasText Player1Text, Player2Text;
         private static GameObject canvas;
-        private static float width = 300f;
-        private static int FontSize = 36;
-        private static float height = 100f;
 
         private void Update()
         {
+            var settings = PlayerHealth.Instance.settings;
             //save data
-            if (Input.GetKeyDown((KeyCode) Enum.Parse(typeof(KeyCode), PlayerHealth.Instance.settings.Save_Data_To_File,
-                true)))
+            if (InputtedKey(settings.Save_Data_To_File))
             {
                 PlayerHealth.Instance.Log("Trying to save data");
-                IHkmpApi hkmpApi;
-                try
-                {
-                    hkmpApi = Hkmp.Hkmp.GetApi();
-                    PlayerHealth.Instance.Log("Got API");
-                }
-                catch (InvalidOperationException)
-                {
-                    return;
-                }
 
-                var gameManager = hkmpApi.GetGameManager();
-                var playerManager = gameManager.GetPlayerManager();
-                var playerList = playerManager.GetPlayers();
-
-                var newList = playerList.Select(player => player.GetName()).ToList();
-                
-                #if DEBUG
-                newList.Add("Mulhima");
-                newList.Add("Mul");
-                newList.Add("PvP Master");
-                newList.Add("God Slayer");
-                newList.Add("Some Random Dude");
-                newList.Add("I've ran out of names lol");
-                #endif
+                var newList = GetPlayerList().Select(player => player.GetName()).ToList();
 
                 var newData = new Settings
                 {
@@ -67,63 +42,49 @@ namespace PlayerHealth
             }
 
             //load data
-            if (Input.GetKeyDown((KeyCode) Enum.Parse(typeof(KeyCode),
-                PlayerHealth.Instance.settings.Load_Data_From_File, true)))
+            if (InputtedKey(settings.Load_Data_From_File))
             {
-                IHkmpApi hkmpApi;
-                try
-                {
-                    hkmpApi = Hkmp.Hkmp.GetApi();
-                }
-                catch (InvalidOperationException)
-                {
-                    return;
-                }
-
                 var newData = JsonConvert.DeserializeObject<Settings>(File.ReadAllText(PlayerHealth.MyFile));
 
-                var playerList = hkmpApi.GetGameManager().GetPlayerManager().GetPlayers();
+                var playerNameList = GetPlayerList().Select(player => player.GetName()).ToList();
 
                 var Player1_test = newData.DisplayedPlayers.Item1;
                 var Player2_test = newData.DisplayedPlayers.Item2;
 
                 bool isPlayer1Real = false, isPlayer2Real = false;
+                
+                if(playerNameList.Contains(Player1_test)) isPlayer1Real = true;
+                if(playerNameList.Contains(Player2_test)) isPlayer2Real = true;
 
-                foreach (var player in playerList)
-                {
-                    if (player.GetName() == Player1)
-                    {
-                        isPlayer1Real = true;
-                    }
-
-                    if (player.GetName() == Player2)
-                    {
-                        isPlayer2Real = true;
-                    }
-                }
-
-                if (isPlayer1Real && isPlayer2Real)
-                {
-                    Player1 = Player1_test;
-                    Player2 = Player2_test;
-                }
-#if DEBUG
-                else
-                {
-                    Player1 = Player1_test;
-                    Player2 = Player2_test;
-                }
-#endif
-
+                //if player given  not in list then text is made blank
+                Player1 = isPlayer1Real ? Player1_test : "";
+                Player2 = isPlayer2Real ? Player2_test : "";
+                
                 UpdateNameText();
             }
 
             //remove text
-            if (Input.GetKeyDown(
-                (KeyCode) Enum.Parse(typeof(KeyCode), PlayerHealth.Instance.settings.Remove_Text, true)))
+            if (InputtedKey(settings.Remove_Text))
             {
                 RemoveText();
             }
+        }
+
+        private static bool InputtedKey(string key) => Input.GetKeyDown((KeyCode) Enum.Parse(typeof(KeyCode), key, true));
+
+        private static List<IPlayer> GetPlayerList()
+        {
+            IHkmpApi hkmpApi;
+            try
+            {
+                hkmpApi = Hkmp.Hkmp.GetApi();
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+
+            return hkmpApi.GetGameManager().GetPlayerManager().GetPlayers();
         }
 
         public static void RemoveText()
@@ -137,19 +98,7 @@ namespace PlayerHealth
         {
             if (Player1 == null && Player2 == null) return;
             
-
-            IHkmpApi hkmpApi;
-            try
-            {
-                hkmpApi = Hkmp.Hkmp.GetApi();
-            }
-            catch (InvalidOperationException)
-            {
-                PlayerHealth.Instance.Log("NO HKMP");
-                return;
-            }
-
-            var playerList = hkmpApi.GetGameManager().GetPlayerManager().GetPlayers();
+            var playerList = GetPlayerList();
 
             //to make compiler not scream at me saying it might not be initialized;
             int Player1Health = 0, Player2Health = 0;
@@ -158,47 +107,47 @@ namespace PlayerHealth
             {
                 if (player.GetName() == Player1)
                 {
-                    Player1Health = Int32.Parse(player.GetHealth().ToString());
+                    Player1Health = int.Parse(player.GetHealth().ToString());
                 }
 
                 if (player.GetName() == Player2)
                 {
-                    Player2Health = Int32.Parse(player.GetHealth().ToString());
+                    Player2Health = int.Parse(player.GetHealth().ToString());
                 }
             }
-#if DEBUG
-            Player1Health = Player2Health = PlayerData.instance.health;
-#endif
 
+            //if player name is blank then looks at local players health
+            Player1Health = Player1 == "" ? PlayerData.instance.health : Player1Health;
+            Player2Health = Player2 == "" ? PlayerData.instance.health : Player2Health;
+            
             float current_spot_left = 0f;
-            float current_spot_right = Screen.width - PlayerHealth.images["right_1"].width;
+            float current_spot_right = Screen.width - PlayerHealth.TextureDimentions.Item1; //item1 is width
+            float amountToMove = PlayerHealth.TextureDimentions.Item1 / 2f + HorizontalSpacing;
             Texture2D tex;
 
             for (int i = 1; i <= Player1Health; i++)
             {
-                int draw = i switch
-                {
-                    var x when (x >= 1 && x <= DarkShade) => 1,
-                    var x when (x >= DarkShade && x <= MediumShade) => 2,
-                    _ => 3,
-                };
-                tex = PlayerHealth.images[$"left_{draw}"];
+                tex = PlayerHealth.images[$"left_{FindDrawTex(i)}"];
                 GUI.DrawTexture(new Rect(current_spot_left, VerticalSpacing, tex.width, tex.height), tex);
-                current_spot_left += tex.width / 2 + HorizontalSpacing;
+                current_spot_left += amountToMove;
             }
 
             for (int i = 1; i <= Player2Health; i++)
             {
-                int draw = i switch
-                {
-                    var x when (x >= 1 && x <= DarkShade) => 1,
-                    var x when (x >= DarkShade && x <= MediumShade) => 2,
-                    _ => 3,
-                };
-                tex = PlayerHealth.images[$"right_{draw}"];
+                tex = PlayerHealth.images[$"right_{FindDrawTex(i)}"];
                 GUI.DrawTexture(new Rect(current_spot_right, VerticalSpacing, tex.width, tex.height), tex);
-                current_spot_right -= tex.width / 2 + HorizontalSpacing;
+                current_spot_right -= amountToMove;
             }
+        }
+
+        private static string FindDrawTex(int i)
+        {
+            return i switch
+            {
+                <= DarkShade => "DarkShade",
+                <= DarkShade + MediumShade => "MediumShade",
+                _ => "LightShade",
+            };
         }
 
         private void UpdateNameText()
@@ -213,10 +162,10 @@ namespace PlayerHealth
             Player2Text.UpdateText(Player2);
         }
 
-        public static void MakeNewPanels()
+        //code taken from jngo's multiplayer mod
+        private static void MakeNewPanels()
         {
             //make sure no NRE's
-            //code taken from jngo's multiplayer mod
             if (canvas != null && Player1Text != null && Player2Text != null) return;
             
             canvas ??= new GameObject("HKMP PlayerHealth Canvas");
@@ -226,7 +175,7 @@ namespace PlayerHealth
             scaler.referenceResolution = new Vector2(Screen.width, Screen.height);
             DontDestroyOnLoad(canvas);
 
-            float yPos = PlayerHealth.images["right_1"].height + VerticalSpacing;
+            float yPos = PlayerHealth.TextureDimentions.Item2 + VerticalSpacing;//item 2 is height
 
             Player1Text ??= new CanvasText(
                 canvas,

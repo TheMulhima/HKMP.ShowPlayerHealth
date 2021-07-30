@@ -3,7 +3,6 @@ using UnityEngine.UI;
 
 namespace PlayerHealth
 {
-    
     //this code was taken from jngo's Multiplayer mod.
     public class CanvasText
     {
