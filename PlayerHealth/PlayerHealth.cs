@@ -12,7 +12,7 @@ namespace PlayerHealth
 {
     public class PlayerHealth:Mod
     {
-        public override string GetVersion() => "v1.0.4";
+        public override string GetVersion() => "v1.0.6";
 
         internal static PlayerHealth Instance;
 
@@ -38,13 +38,13 @@ namespace PlayerHealth
             //make sure file has some data atleast
             var dummydata = new Settings
             {
-                AllPlayers = {""},
-                DisplayedPlayers = ("","")
+                DisplayedPlayers = ("",""),
+                AllPlayers = {""}
             };
 
             if (!Directory.Exists(MyPath)) Directory.CreateDirectory(MyPath);
             
-            if (!File.Exists(MyFile)) File.WriteAllText(MyFile,JsonConvert.SerializeObject(dummydata));
+            if (!File.Exists(MyFile)) File.WriteAllText(MyFile,JsonConvert.SerializeObject(dummydata, Formatting.Indented));
             
             string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
             foreach (string res in resourceNames)

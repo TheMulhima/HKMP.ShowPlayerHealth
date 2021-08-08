@@ -34,11 +34,11 @@ namespace PlayerHealth
 
                 var newData = new Settings
                 {
+                    DisplayedPlayers = ("", ""),
                     AllPlayers = newList,
-                    DisplayedPlayers = ("", "")
                 };
 
-                File.WriteAllText(PlayerHealth.MyFile, JsonConvert.SerializeObject(newData));
+                File.WriteAllText(PlayerHealth.MyFile, JsonConvert.SerializeObject(newData, Formatting.Indented));
             }
 
             //load data
@@ -107,18 +107,24 @@ namespace PlayerHealth
             {
                 if (player.GetName() == Player1)
                 {
-                    Player1Health = int.Parse(player.GetHealth().ToString());
+                    Player1Health = player.GetHealth();
                 }
 
                 if (player.GetName() == Player2)
                 {
-                    Player2Health = int.Parse(player.GetHealth().ToString());
+                    Player2Health = player.GetHealth();
                 }
             }
 
             //if player name is blank then looks at local players health
-            Player1Health = Player1 == "" ? PlayerData.instance.health : Player1Health;
-            Player2Health = Player2 == "" ? PlayerData.instance.health : Player2Health;
+
+            var localPlayerHealth = PlayerData.instance.health + PlayerData.instance.healthBlue;
+            
+            Player1Health = Player1 == "" ? localPlayerHealth : Player1Health;
+            Player2Health = Player2 == "" ? localPlayerHealth : Player2Health;
+            
+            Player1Health = FixFullScreenHealthbars(Player1Health);
+            Player2Health = FixFullScreenHealthbars(Player2Health);
             
             float current_spot_left = 0f;
             float current_spot_right = Screen.width - PlayerHealth.TextureDimentions.Item1; //item1 is width
@@ -138,6 +144,14 @@ namespace PlayerHealth
                 GUI.DrawTexture(new Rect(current_spot_right, VerticalSpacing, tex.width, tex.height), tex);
                 current_spot_right -= amountToMove;
             }
+        }
+
+        //this is needed cuz overflow exists
+        private static int FixFullScreenHealthbars(int health)
+        {
+            // UHeart + LCore + LHeart + Jonis = 23
+            // if more than 22 we can be sure overflow happened so just make it 0
+            return health <= 24 ? health : 0;
         }
 
         private static string FindDrawTex(int i)

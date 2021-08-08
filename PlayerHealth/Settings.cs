@@ -7,8 +7,8 @@ namespace PlayerHealth
     [Serializable]
     public class Settings
     {
-        public List<string> AllPlayers = new List<string>();
         public (string, string) DisplayedPlayers;
+        public List<string> AllPlayers = new List<string>();
     }
 
     public class GlobalModSettings:ModSettings
